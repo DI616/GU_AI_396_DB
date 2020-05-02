@@ -54,17 +54,6 @@ SELECT (
 -- Коэффициенты активности: 
 -- сообщение - 0.5, лайк - 0.5, пост - 1, отправленная заявка - 0.75, друг - 1.5, фото профиля - 2, загруженное медиа - 1
 
-SELECT * FROM messages WHERE from_user_id = 130 OR to_user_id = 130;
-SELECT * FROM likes WHERE user_id = 130;
-SELECT * FROM publications WHERE user_id = 130;
-SELECT * FROM friendship WHERE (user_id = 130 OR friend_id = 130) AND status_id = 2;
-SELECT * FROM friendship WHERE (user_id = 130 OR friend_id = 130) AND status_id = 1;
-SELECT * FROM profiles WHERE user_id = 130;
-SELECT * FROM media WHERE user_id = 130;
-
-desc friendship;
-select * from friendship_statuses;
-
 SELECT users.id AS 'id',
   CONCAT(users.first_name, ' ', users.last_name) AS 'name',
   (
