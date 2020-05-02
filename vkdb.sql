@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS vk;
 CREATE DATABASE vk;
 
 USE vk;
@@ -57,7 +58,7 @@ CREATE TABLE friendship_statuses (
 CREATE TABLE publications (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   user_id INT UNSIGNED NOT NULL,
-  community_id INT UNSIGNED, -- Пост может быть опубликован как в профиле, так и в группе
+  community_id INT UNSIGNED,
   title VARCHAR(128) NOT NULL,
   body TEXT NOT NULL,
   created_at DATETIME DEFAULT NOW(),
@@ -85,7 +86,6 @@ CREATE TABLE communities_users (
 );
 
 -- Таблица медиафайлов
--- Тип фала и расширение не согласованы, но тут я заморачиваться не стал
 CREATE TABLE media (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   media_type_id INT UNSIGNED NOT NULL,
@@ -103,22 +103,21 @@ CREATE TABLE media_types (
   name VARCHAR(255) NOT NULL UNIQUE
 );
 
-/* Если проставлять лайки без привязки к пользователям, то достаточно добавить в таблицы сущностей,
-   которые возможно лайкнуть, столбец liked, который инкрементировался бы при нажатии кнопки like.
-   Если сохранять пользователей, которые поставили лайк, можно составить для каждого типа контента
-   создать отдельную таблицу с лайками, или следующий вариант. */
-
 -- Таблица лайков
+DROP TABLE IF EXISTS likes;
 CREATE TABLE likes (
-  from_user_id INT UNSIGNED NOT NULL,
-  entity_id INT UNSIGNED NOT NULL,
-  entity_type_id INT UNSIGNED NOT NULL,
-  created_at DATETIME DEFAULT NOW(),
-  PRIMARY KEY (from_user_id, entity_id)
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  target_id INT UNSIGNED NOT NULL,
+  target_type_id INT UNSIGNED NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Таблица типов контента
-CREATE TABLE entity_type (
-  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE
+-- Таблица типов лайков
+DROP TABLE IF EXISTS target_types;
+CREATE TABLE target_types (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
