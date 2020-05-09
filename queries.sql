@@ -1,72 +1,54 @@
--- Подсчитать общее количество лайков десяти самых молодых пользователей.
+-- Подсчитать общее количество лайков десяти самым молодым пользователям 
+-- (сколько лайков получили 10 самых молодых пользователей)
 
--- Тут дваварианта, так как не совсем понял задание. В певом варианте 
--- подсчитывается количесво лайков для каждого отдельного пользователя,
--- причем не учитываются те, кто вообще не ставил лайков, во втором же 
--- подсчитывается общее количество с учетом не ставивших лайки.
+SELECT COUNT(target_id) FROM likes
+  RIGHT JOIN (
+    SELECT * FROM profiles 
+      ORDER BY birthday DESC 
+      LIMIT 10) AS profiles
+    ON likes.target_id = profiles.user_id 
+      AND likes.target_type_id = 2;
 
--- Первый варианрт
-SELECT 
-  user_id AS 'id', 
-  count(*) AS 'total',
-  (
-    SELECT CONCAT(first_name, ' ', last_name) FROM users WHERE users.id = likes.user_id
-  ) AS 'user',
-  (
-    SELECT TIMESTAMPDIFF(YEAR, birthday, NOW()) FROM profiles WHERE profiles.user_id = likes.user_id
-  ) AS 'age',
-  (
-    SELECT birthday FROM profiles WHERE profiles.user_id = likes.user_id
-  ) AS 'birthday'
-  FROM likes 
-  GROUP BY user_id
-  ORDER BY birthday DESC
-  LIMIT 10;
-  
--- Второй вариант
-SELECT COUNT(*) AS total FROM likes WHERE likes.user_id IN(
-  SELECT * FROM (
-	SELECT user_id FROM profiles
-    ORDER BY birthday DESC
-    LIMIT 10
-  ) AS T
-);
-
+     
 -- Определить кто больше поставил лайков (всего) - мужчины или женщины?
-
-SELECT (
-  SELECT COUNT(*) FROM likes WHERE user_id IN(
-    SELECT * FROM (
-      SELECT user_id FROM profiles WHERE gender = 'm'   
-    ) AS T 
-  )
-) AS 'male',
-(
-  SELECT COUNT(*) FROM likes WHERE user_id IN(
-    SELECT * FROM (
-      SELECT user_id FROM profiles WHERE gender = 'f'   
-    ) AS T 
-  )
-) AS 'female';
-
+     
+SELECT gender FROM (
+  SELECT 
+    COUNT(*) AS `count`, 
+    IF (profiles.gender = 'm', 'men', 'women') AS gender
+      FROM likes 
+        INNER JOIN profiles
+          ON likes.user_id = profiles.user_id
+      GROUP BY profiles.gender
+      ORDER BY `count` DESC) AS tbl 
+    LIMIT 1;
+  
+   
 -- Найти 10 пользователей, которые проявляют наименьшую активность в использовании социальной сети
-
--- Коэффициенты активности: 
--- сообщение - 0.5, лайк - 0.5, пост - 1, отправленная заявка - 0.75, друг - 1.5, фото профиля - 2, загруженное медиа - 1
-
-SELECT users.id AS 'id',
-  CONCAT(users.first_name, ' ', users.last_name) AS 'name',
+   
+SELECT DISTINCT
+  u.id AS 'id',
+  CONCAT(u.first_name, ' ', u.last_name) AS 'name',
   (
-    (SELECT 0.5 * (SELECT COUNT(*) FROM messages WHERE from_user_id = users.id OR to_user_id = users.id)) +
-    (SELECT 0.5 * (SELECT COUNT(*) FROM likes WHERE user_id = users.id)) +
-    (SELECT COUNT(*) FROM publications WHERE user_id = users.id) +
-    (SELECT 0.75 * (SELECT COUNT(*) FROM friendship WHERE (user_id = users.id OR friend_id = users.id) AND status_id = 2)) +
-    (SELECT 1.5 * (SELECT COUNT(*) FROM friendship WHERE (user_id = users.id OR friend_id = users.id) AND status_id = 1)) +
-    (SELECT COUNT(*) FROM media WHERE user_id = users.id) +
-    (SELECT COUNT(*) FROM profiles WHERE user_id = users.id AND profiles.photo_id IS NOT NULL)
-  ) AS 'activity' 
-  FROM users
-  GROUP BY id
+    0.5 * COUNT(DISTINCT m.id) +
+    0.5 * COUNT(DISTINCT l.id) +
+    COUNT(DISTINCT p.id) +
+    COUNT(DISTINCT media.id) +
+    COUNT(DISTINCT f1.friend_id) +
+    COUNT(DISTINCT f2.user_id)
+  ) AS activity
+  FROM users AS u
+    LEFT JOIN messages AS m 
+      ON m.from_user_id = u.id
+    LEFT JOIN likes AS l 
+      ON l.user_id = u.id
+    LEFT JOIN publications AS p
+      ON p.user_id = u.id
+    LEFT JOIN media
+      ON media.user_id = u.id
+    LEFT JOIN friendship AS f1
+      ON f1.user_id = u.id AND f1.status_id =1
+    LEFT JOIN friendship AS f2
+      ON f2.friend_id = u.id AND f2.status_id =1
+  GROUP BY u.id
   ORDER BY activity
-  LIMIT 10;
-
