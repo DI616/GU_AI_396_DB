@@ -58,9 +58,15 @@ SELECT selected_date , IF(events.created_at IS NOT NULL, 1, 0) AS events FROM
   ORDER BY selected_date;
 
 
+/* Пусть имеется любая таблица с календарным полем created_at. Создайте запрос, 
+ * который удаляет устаревшие записи из таблицы, оставляя только 5 самых свежих записей.*/
 
+SELECT @created_at := created_at FROM test ORDER BY created_at DESC LIMIT 5, 1;
+DELETE FROM test WHERE created_at <= @created_at;
 
-
+/* Данный запрос также можно было бы проводить с выборкой по id, 
+ * и тогда гарантированно не удалялись бы записи с одинаковой датой,
+ * но в уловии не было id, так что оставил такой вариант*/
 
 
 
