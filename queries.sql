@@ -52,3 +52,41 @@ SELECT DISTINCT
       ON f2.friend_id = u.id AND f2.status_id =1
   GROUP BY u.id
   ORDER BY activity
+
+
+/* Проанализировать какие запросы могут выполняться наиболее часто 
+ * в процессе работы приложения и добавить необходимые индексы*/
+
+CREATE INDEX users_name_idx ON users(name);
+CREATE INDEX users_city_idx ON users(city);
+CREATE INDEX profiles_birthday_idx ON profiles(birthday);
+CREATE INDEX puplications_created_at_idx ON publications(created_at);
+CREATE INDEX messages_created_at_idx ON messages(created_at);
+CREATE INDEX messages_from_user_id_idx ON messages(from_user_id);
+CREATE INDEX messages_to_user_id_idx ON messages(to_user_id);
+
+
+/* Построить запрос, который будет выводить следующие столбцы:
+ * имя группы
+ * среднее количество пользователей в группах
+ * самый молодой пользователь в группе
+ * самый старший пользователь в группе
+ * общее количество пользователей в группе
+ * всего пользователей в системе
+ * отношение в процентах (общее количество пользователей в группе / всего пользователей в системе) * 100*/
+       
+SELECT DISTINCT communities.name,
+  COUNT(communities_users.user_id) OVER () / (SELECT COUNT(*) FROM communities) AS average,
+  MAX(profiles.birthday) OVER w AS yongest_user,
+  MIN(profiles.birthday) OVER w AS oldest_user,
+  COUNT(communities_users.user_id) OVER () AS total,
+  COUNT(communities_users.user_id) OVER w AS total_in_group,
+  COUNT(communities_users.user_id) OVER w / COUNT(profiles.user_id) OVER () * 100 AS "%"
+    FROM communities 
+      JOIN communities_users 
+        ON communities.id = communities_users.community_id
+      JOIN users 
+        ON users.id = communities_users.user_id
+      JOIN profiles 
+        ON profiles.user_id = users.id
+    WINDOW w AS (PARTITION BY communities.name);
