@@ -90,3 +90,60 @@ SELECT DISTINCT communities.name,
       JOIN profiles 
         ON profiles.user_id = users.id
     WINDOW w AS (PARTITION BY communities.name);
+
+
+
+/* Создайте таблицу logs типа Archive. Пусть при каждом создании записи в таблицах users, 
+ * catalogs и products в таблицу logs помещается время и дата создания записи, 
+ * название таблицы, идентификатор первичного ключа и содержимое поля name.*/
+
+CREATE TABLE logs (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  created_at DATETIME NOT NULL DEFAULT NOW(),
+  table_name VARCHAR(50) NOT NULL,
+  row_id INT UNSIGNED NOT NULL,
+  row_name VARCHAR(50) NOT NULL
+) ENGINE=Archive;
+
+CREATE TRIGGER users_inserts AFTER INSERT ON users
+FOR EACH ROW 
+BEGIN
+  INSERT INTO logs(id, created_at, table_name, row_id, row_name) VALUES (
+    NULL, NULL, 'users', NEW.id, NEW.name
+  );
+END;
+
+CREATE TRIGGER users_inserts AFTER INSERT ON catalogs
+FOR EACH ROW 
+BEGIN
+  INSERT INTO logs(id, created_at, table_name, row_id, row_name) VALUES (
+    NULL, NULL, 'catalogs', NEW.id, NEW.name
+  );
+END;
+
+CREATE TRIGGER users_inserts AFTER INSERT ON products
+FOR EACH ROW 
+BEGIN
+  INSERT INTO logs(id, created_at, table_name, row_id, row_name) VALUES (
+    NULL, NULL, 'products', NEW.id, NEW.name
+  );
+END;
+
+
+/*Создайте SQL-запрос, который помещает в таблицу users миллион записей.*/
+
+CREATE TABLE some_table (i INT);
+
+
+CREATE PROCEDURE one_million_inserts ()
+BEGIN
+	DECLARE i INT;
+    SET i = 1000000;
+	
+    WHILE i > 0 DO
+      INSERT INTO some_table VALUES (i);
+      SET i = i - 1;
+   END WHILE;
+END;
+
+CALL one_million_inserts();
